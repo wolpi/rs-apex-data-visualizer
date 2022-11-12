@@ -107,13 +107,30 @@ async fn main() -> io::Result<()> {
             io::ErrorKind::InvalidInput,
             "which data file to serve ???"));
     }
-    for arg in args {
-        let file_result = handle_file(&arg);
-        if file_result.is_err() {
-            let error_msg = format!("could not open file {}: {}", arg, file_result.err().unwrap());
-            return io::Result::Err(io::Error::new(io::ErrorKind::InvalidInput, error_msg));
+    let mut port :&str = "8080";
+    let mut skip_next = false;
+    for i in 0..args.len() {
+        if skip_next {
+            skip_next = false;
+            continue;
+        }
+        let arg = &args[i];
+        if arg == "-p" {
+            if args.len() > (i + 1) {
+                port = &args[i+1];
+                skip_next = true;
+            }
+        } else {
+            let file_result = handle_file(&arg);
+            if file_result.is_err() {
+                let error_msg = format!("could not open file {}: {}", arg, file_result.err().unwrap());
+                return io::Result::Err(io::Error::new(io::ErrorKind::InvalidInput, error_msg));
+            }
         }
     }
+
+    let bind = format!("0.0.0.0:{}", port);
+    println!("binding to {}", bind);
 
     HttpServer::new(move || {
         let generated = generate();
@@ -125,7 +142,7 @@ async fn main() -> io::Result<()> {
             .service(data_apex_json)
             .service(actix_web_static_files::ResourceFiles::new("/", generated,))
     })
-    .bind("0.0.0.0:8080")?
+    .bind(bind)?
     .run()
     .await
 }
