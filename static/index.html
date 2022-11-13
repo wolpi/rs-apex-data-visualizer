@@ -12,9 +12,10 @@ function render(data) {
   names.sort();
   let numberOfCharts = names.length;
 
+  let i = 0;
   names.forEach(name => {
     let div = document.createElement('div');
-    div.id = 'graph-' + name;
+    div.id = 'graph-' + i;
     document.body.appendChild(div);
 
     var options = {
@@ -80,8 +81,9 @@ function render(data) {
       }
     };
 
-    var chart = new ApexCharts(document.querySelector("#graph-" + name), options);
+    var chart = new ApexCharts(document.querySelector("#graph-" + i), options);
     chart.render();
+    i = i + 1;
   });
 
 }

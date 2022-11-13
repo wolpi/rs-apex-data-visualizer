@@ -75,11 +75,13 @@ fn handle_file(path_str :&String) -> io::Result<&'static str> {
         return io::Result::Err(err);
     }
     let file_name = data_path.file_name().unwrap().to_str().unwrap();
-    init_data(extract_name(file_name), &file_result.unwrap());
+    let fallback_name = extract_fallback_name(file_name);
+    println!("parsing file with fallback name: {}, {}", fallback_name, path_str);
+    init_data(&file_result.unwrap(), fallback_name);
     return Result::Ok("ok");
 }
 
-fn extract_name(file_name :&str) -> &str {
+fn extract_fallback_name(file_name :&str) -> &str {
     let index_opt_dot = file_name.find(".");
     let index_opt_under = file_name.find("_");
 
@@ -90,11 +92,18 @@ fn extract_name(file_name :&str) -> &str {
     return &file_name[0 .. index];
 }
 
-fn init_data(name :&str, file: &File) {
-    let mut data: Vec<parse::Entry> = parse::parse_file(&file);
-    data.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+fn init_data(file: &File, fallback_name :&str) {
+    let mut data: HashMap<String, Vec<parse::Entry>> = HashMap::new();
+    parse::parse_file(&file, fallback_name, &mut data);
     let mut guard = DATA.lock().unwrap();
-    guard.insert(String::from(name), data);
+    for (name, vec) in data.iter_mut() {
+        vec.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
+        let mut copy :Vec<parse::Entry> = Vec::new();
+        for entry in vec {
+            copy.push(entry.clone());
+        }
+        guard.insert(name.to_string(), copy);
+    }
 }
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));
