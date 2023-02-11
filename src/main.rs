@@ -23,6 +23,8 @@ use std::io;
 use std::env;
 use std::ops::Deref;
 
+use webbrowser;
+
 lazy_static! {
     static ref DATA: Mutex<HashMap<String, Vec<parse::Entry>>> = Mutex::new(HashMap::new());
 }
@@ -136,6 +138,15 @@ async fn main() -> io::Result<()> {
                 return io::Result::Err(io::Error::new(io::ErrorKind::InvalidInput, error_msg));
             }
         }
+    }
+
+    let mut browser_url = "http://127.0.0.1:".to_string();
+    browser_url.push_str(port);
+    println!("opening browser at {} ...", browser_url);
+    let browser_result = webbrowser::open(browser_url.as_str());
+    if browser_result.is_err() {
+        println!("... failed");
+        println!("{}", browser_result.err().unwrap());
     }
 
     let bind = format!("0.0.0.0:{}", port);
