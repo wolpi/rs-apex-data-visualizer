@@ -26,7 +26,7 @@ use std::ops::Deref;
 use webbrowser;
 
 lazy_static! {
-    static ref DATA: Mutex<HashMap<String, Vec<parse::Entry>>> = Mutex::new(HashMap::new());
+    static ref DATA: Mutex<HashMap<String, HashMap<String, Vec<parse::Entry>>>> = Mutex::new(HashMap::new());
 }
 
 #[get("/data.json")]
@@ -38,16 +38,21 @@ async fn data_json(req: HttpRequest) -> HttpResponse {
 #[get("/data-apex.json")]
 async fn data_apex_json(req: HttpRequest) -> HttpResponse {
     println!("data-apex.json request from {}", req.connection_info().remote_addr().unwrap());
-    let mut map_apex :HashMap<&str, Vec<(&u64, &f32)>> = HashMap::new();
+    let mut map_apex_files :HashMap<&str, HashMap<&str, Vec<(&u64, &f32)>>> = HashMap::new();
     let data = DATA.lock().unwrap();
-    let map = data.deref();
-    for (name, vec) in map.iter() {
-        let vec_apex :Vec<(&u64, &f32)> = vec.into_iter().map(
-            |entry| (&entry.timestamp, &entry.value)
-        ).collect();
-        map_apex.insert(name, vec_apex);
+    let file_to_name = data.deref();
+    for (file, name_to_data) in file_to_name.iter() {
+        let mut map_apex_data :HashMap<&str, Vec<(&u64, &f32)>> = HashMap::new();
+        for (name, vec) in name_to_data.iter() {
+            let vec_apex :Vec<(&u64, &f32)> = vec.into_iter().map(
+                |entry| (&entry.timestamp, &entry.value)
+            ).collect();
+            map_apex_data.insert(name, vec_apex);
+            println!("  delivering data of file {} and name {} ...", file, name);
+        }
+        map_apex_files.insert(file, map_apex_data);
     }
-    HttpResponse::Ok().json(map_apex)
+    HttpResponse::Ok().json(map_apex_files)
 }
 
 fn error_handlers() -> ErrorHandlers<Body> {
@@ -97,15 +102,18 @@ fn extract_fallback_name(file_name :&str) -> &str {
 fn init_data(file: &File, fallback_name :&str) {
     let mut data: HashMap<String, Vec<parse::Entry>> = HashMap::new();
     parse::parse_file(&file, fallback_name, &mut data);
-    let mut guard = DATA.lock().unwrap();
+    let mut copy_map: HashMap<String, Vec<parse::Entry>> = HashMap::new();
     for (name, vec) in data.iter_mut() {
         vec.sort_by(|a, b| a.timestamp.cmp(&b.timestamp));
         let mut copy :Vec<parse::Entry> = Vec::new();
         for entry in vec {
             copy.push(entry.clone());
         }
-        guard.insert(name.to_string(), copy);
+        println!("storing data of file {} with name {} ...", fallback_name, name);
+        copy_map.insert(name.to_string(), copy);
     }
+    let mut guard = DATA.lock().unwrap();
+    guard.insert(fallback_name.to_string(), copy_map);
 }
 
 include!(concat!(env!("OUT_DIR"), "/generated.rs"));

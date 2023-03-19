@@ -8,21 +8,30 @@
 
 <script>
 function render(data) {
-  let names = Object.keys(data);
-  names.sort();
-  let numberOfCharts = names.length;
+  let files = Object.keys(data);
+  files.sort();
+  let numberOfCharts = files.length;
 
   let i = 0;
-  names.forEach(name => {
+  files.forEach(file => {
     let div = document.createElement('div');
     div.id = 'graph-' + i;
     document.body.appendChild(div);
 
-    var options = {
-      series: [{
+    dataOfFile = data[file];
+    let names = Object.keys(dataOfFile);
+    names.sort();
+
+    let series = [];
+    names.forEach(name => {
+      series.push({
         name: name,
-        data: data[name]
-      }],
+        data: dataOfFile[name]
+      });
+    });
+
+    var options = {
+      series: series,
       chart: {
         type: 'area',
         stacked: false,
