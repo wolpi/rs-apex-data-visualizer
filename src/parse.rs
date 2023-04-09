@@ -100,7 +100,7 @@ fn parse_header_line(line :&String, names: & mut Vec<String>) -> Result<bool, &'
         
         let name: &str = &line_remainer[start_index_offset..index - end_index_offset];
         names.push(String::from(name));
-        line_index = line_index + name.len() + 1;
+        line_index = start_index_offset + line_index + name.len() + 1 + end_index_offset;
     }
     return Result::Ok(true);
 }
