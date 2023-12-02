@@ -21,8 +21,14 @@ const TIME_FORMATS :[&str;1] = [
 ];
 
 const DATE_FORMAT_1 :&str = "%a %d %b %Y";
-const DATE_FORMATS :[&str;1] = [
+const DATE_FORMAT_2 :&str = "%d.%b.%Y";
+const DATE_FORMAT_3 :&str = "%d.%b %Y";
+const DATE_FORMAT_4 :&str = "%d.%b";
+const DATE_FORMATS :[&str;4] = [
     DATE_FORMAT_1,
+    DATE_FORMAT_2,
+    DATE_FORMAT_3,
+    DATE_FORMAT_4,
 ];
 
 
